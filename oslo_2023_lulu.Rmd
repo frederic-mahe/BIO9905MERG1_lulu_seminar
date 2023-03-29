@@ -12,8 +12,13 @@ output:
     # code_folding: hide
 ---
 
+
 ```{r setup, include=FALSE}
-rm(list = ls()) # remove all objects before starting
+## remove all objects and remaining lulu log files before starting
+rm(list = ls())
+file.remove(list.files(path = ".",
+                       pattern = "lulu.log_*",
+                       full.names = TRUE))
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -39,6 +44,12 @@ library(dplyr)
 ## basic usage
 
 The best way to learn a new tool is to play with it!
+
+## issues
+
+- no versionning
+- uses deprecated dplyr features
+
 
 ### partial overlap
 
@@ -89,5 +100,11 @@ lulu::lulu(otutable_name, matchlist_name)
 
 ```{r}
 sessionInfo()
+```
+
+```{r cleanup, include=FALSE}
+file.remove(list.files(path = ".",
+                       pattern = "lulu.log_*",
+                       full.names = TRUE))
 rm(list = ls())
 ```
