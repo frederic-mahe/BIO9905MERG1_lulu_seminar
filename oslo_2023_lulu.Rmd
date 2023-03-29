@@ -1,0 +1,93 @@
+---
+title: "post-clustering curation with lulu"
+author: "Frédéric Mahé"
+date: '2023-03-19'
+
+output:
+  rmarkdown::html_document:
+    theme: lumen
+    toc: yes
+    toc_float: TRUE
+    keep_md: yes
+    # code_folding: hide
+---
+
+```{r setup, include=FALSE}
+rm(list = ls()) # remove all objects before starting
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+***
+
+#### install lulu if need be
+
+devtools is also a requirement
+
+```{r}
+## check if lulu is available, if not install it
+```
+
+
+#### load required packages
+
+```{r packages, message=FALSE}
+library(lulu)
+library(dplyr)
+```
+
+
+## basic usage
+
+The best way to learn a new tool is to play with it!
+
+### partial overlap
+
+```{r}
+matchlist_name <- data.frame(x = "B" , y = "A", z = 99.0)
+otutable_name <- data.frame(
+    row.names = c("A", "B"),
+    s01 = c(0, 1), # <= 'B' present, 'A' absent
+    s02 = c(9, 1),
+    s03 = c(9, 1),
+    s04 = c(9, 1),
+    s05 = c(9, 1),
+    s06 = c(9, 1),
+    s07 = c(9, 1),
+    s08 = c(9, 1),
+    s09 = c(9, 1),
+    s10 = c(9, 1),
+    s11 = c(9, 1),
+    s12 = c(9, 1),
+    s13 = c(9, 1),
+    s14 = c(9, 1),
+    s15 = c(9, 1),
+    s16 = c(9, 1),
+    s17 = c(9, 1),
+    s18 = c(9, 1),
+    s19 = c(9, 1),
+    s20 = c(9, 1),
+    s21 = c(9, 1),
+    s22 = c(9, 0)) # <= 'A' present, 'B' absent
+
+otutable_name
+```
+
+Note that parent 'A' is absent in one sample where 'B is present', and
+present in one sample where 'B' is absent (same total spread). The
+relative co-occurence is 20 / 21 = 0.95238, which is greater than
+0.95, the default threshold value.
+
+
+```{r}
+## bug: no merging with default parameters
+## (minimum_ratio = 0)
+lulu::lulu(otutable_name, matchlist_name)
+```
+
+
+***
+
+```{r}
+sessionInfo()
+rm(list = ls())
+```
