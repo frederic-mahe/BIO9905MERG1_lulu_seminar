@@ -45,10 +45,55 @@ library(dplyr)
 
 The best way to learn a new tool is to play with it!
 
+
+### simplest example
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(9, 1),
+    s2 = c(9, 1))
+
+otutable
+```
+
+'A' and 'B' co-occur and 'B' is less abundant than 'A'.
+
+```{r}
+matchlist <- data.frame(x = "B" , y = "A", z = 99.0)
+
+matchlist
+```
+
+'B' has a 99% similarity with 'A'.
+
+
+Let's see what lulu does with that:
+
+```{r}
+lulu::lulu(otutable, matchlist)
+```
+
+First, we got a warning indicating that `lulu` uses `funs()`, a
+deprecated `dplyr` feature. That feature has been marked as deprecated
+in YYYY and will be removed from dplyr in YYYY.
+
+We will focus on the `curated table`:
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+
 ## issues
 
-- no versionning
-- uses deprecated dplyr features
+- does not work with only one sample,
+- does not work with empty matchlists (should output the same table),
+- does not work with empty OTUs (no reads, it should skip the OTU),
+- no versionning,
+- uses deprecated dplyr features,
+- no maintenance,
+- slow
 
 
 ### partial overlap
