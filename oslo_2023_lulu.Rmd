@@ -6,6 +6,8 @@ date: '2023-03-19'
 output:
   rmarkdown::html_document:
     theme: lumen
+    highlight: zenburn
+    df_print: default
     toc: yes
     toc_float: TRUE
     keep_md: yes
@@ -22,50 +24,99 @@ file.remove(list.files(path = ".",
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## what is lulu?
+
+from [lulu's GitHub repository](https://github.com/tobiasgf/lulu):
+
+> The purpose of lulu is to reduce the number of erroneous OTUs in OTU
+> tables to achieve more realistic biodiversity metrics. By evaluating
+> the co-occurence patterns of OTUs among samples lulu identifies OTUs
+> that consistently satisfy some user selected criteria for being
+> errors of more abundant OTUs and merges these.
+
+I invite everyone to read the companion paper [Frøslev et
+al. (2017)](https://www.nature.com/articles/s41467-017-01312-x), but
+today, we will try to understand what lulu can and cannot do, and we
+will do so just by using hand-crafted tests.
+
+Authors and programmers are well-intended, but programming is
+hard. So, if you are ever in doubt about a certain feature, or a
+specifity of your data, writing a short test can save you a lot of
+time and frustation.
+
+Let's dive in!
+
+
 ***
 
-#### install lulu if need be
+#### requirements
 
-devtools is also a requirement
+To install `lulu` you need `devtools`, and to run `lulu` you need
+`dplyr`:
 
 ```{r}
-## check if lulu is available, if not install it
+packages <- c("dplyr", "devtools")
+for (package in packages){
+    if(! package %in% installed.packages()){
+        install.packages(package, dependencies = TRUE)
+    }
+}
+```
+
+#### install lulu (first time)
+
+```{r}
+if(! "lulu" %in% installed.packages()){
+    require(devtools)
+    install_github("tobiasgf/lulu")
+}
 ```
 
 
 #### load required packages
 
 ```{r packages, message=FALSE}
-library(lulu)
-library(dplyr)
+require(dplyr)
+require(lulu)
 ```
 
 
 ## basic usage
 
-The best way to learn a new tool is to play with it!
+According to [lulu's GitHub
+repository](https://github.com/tobiasgf/lulu):
+
+> The required input of lulu is an OTU table and a corresponding
+> matchlist with all the internal matches of OTUs.
 
 
 ### simplest example
+
+The best way to learn a new tool is to play with it! We are going to
+create a very simple example and pass it to `lulu`:
 
 ```{r}
 otutable <- data.frame(
     row.names = c("A", "B"),
     s1 = c(9, 1),
     s2 = c(9, 1))
+```
 
+```{r echo=FALSE}
 otutable
 ```
 
-'A' and 'B' co-occur and 'B' is less abundant than 'A'.
+**A** and **B** co-occur, and **B** is less abundant than **A**.
 
 ```{r}
 matchlist <- data.frame(x = "B" , y = "A", z = 99.0)
+```
 
+```{r echo=FALSE}
 matchlist
 ```
 
-'B' has a 99% similarity with 'A'.
+**B** has a 99% similarity with **A**.
 
 
 Let's see what lulu does with that:
@@ -74,33 +125,541 @@ Let's see what lulu does with that:
 lulu::lulu(otutable, matchlist)
 ```
 
-First, we got a warning indicating that `lulu` uses `funs()`, a
-deprecated `dplyr` feature. That feature has been marked as deprecated
-in YYYY and will be removed from dplyr in YYYY.
-
-We will focus on the `curated table`:
+There is a lot to unpack here (progress information, a warning
+message, and some results). First, we will focus on the `curated
+table`:
 
 ```{r}
 lulu::lulu(otutable, matchlist)$curated_table
 ```
 
+This is the curated (cleaned) version of our dataset. As expected,
+`lulu` grouped the low-abundant **B** with **A** by *merging* the
+occurrence values of **B** with **A**'s. Then **B** was discarded.
 
-## issues
-
-- does not work with only one sample,
-- does not work with empty matchlists (should output the same table),
-- does not work with empty OTUs (no reads, it should skip the OTU),
-- no versionning,
-- uses deprecated dplyr features,
-- no maintenance,
-- slow
+Good, before going any further, let's have a look at the warning
+message.
 
 
-### partial overlap
+### warning message
+
+We got a warning indicating that `lulu` uses `funs()`, a deprecated
+`dplyr` feature. That feature has been marked as deprecated in
+Feb. 2019 and will be removed from `dplyr` in future versions, at
+which point `lulu` will cease to work.
+
+The issue is in file
+[Functions.R](https://github.com/tobiasgf/lulu/blob/master/R/Functions.R),
+line 170:
+
+```{r eval=FALSE}
+curation_table <- as.data.frame(curation_table %>%
+                                group_by(nOTUid) %>%
+                                summarise_all(funs(sum)))
+```
+
+A quick fix (replace `funs()` with `list()`):
+
+```{r eval=TRUE}
+curation_table <- cbind(nOTUid = c("A", "A"), otutable)  # add missing data
+curation_table <- as.data.frame(curation_table %>%
+                                group_by(nOTUid) %>%
+                                summarise_all(list(sum)))
+```
+
+```{r echo=FALSE}
+curation_table
+```
+
+A better fix using a lambda (more generic, more flexible):
+
+```{r eval=TRUE}
+curation_table <- cbind(nOTUid = c("A", "A"), otutable)
+curation_table <- as.data.frame(curation_table %>%
+                                group_by(nOTUid) %>%
+                                summarise(across(everything(), ~ sum(.x))))
+```
+
+```{r echo=FALSE}
+curation_table
+```
+
+
+And finally, the way I would organize things:
+
+```{r eval=TRUE}
+cbind(nOTUid = c("A", "A"), otutable) %>%
+    dplyr::group_by(nOTUid) %>%
+    dplyr::summarise(across(everything(), ~ sum(.x))) %>%
+    as.data.frame() -> curation_table
+```
+
+```{r echo=FALSE}
+curation_table
+```
+
+Less parenthesis symbols, one action per line, data flows from left to
+right, only one named-object at the end (naming objects and variables
+is hard). If you rarely use `dplyr`, then adding `dplyr::` in front of
+commands is a good habit, as it makes it easier to track package
+usage.
+
+Now that we understand the warning message, let's go back to our
+results. Don't worry, the rest we'll be less technical and more
+focused on `lulu`'s results.
+
+
+## match
+
+As seen earlier, `lulu` requires a 'match list', with similarity
+values. We will keep the above example where **A** and **B** co-occur,
+and **B** is less abundant than **A**, and we will change their
+similarity.
+
+### similarity threshold?
+
+We've started with a 99% similarity between **A** and **B**. Let's try
+smaller values:
 
 ```{r}
-matchlist_name <- data.frame(x = "B" , y = "A", z = 99.0)
-otutable_name <- data.frame(
+matchlist <- data.frame(x = "B" , y = "A", z = 90.0)
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+At 90% similarity, **B** is merged with **A**.
+
+
+```{r}
+matchlist <- data.frame(x = "B" , y = "A", z = 85.0)
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+At 85% similarity, **B** is merged with **A**.
+
+```{r}
+matchlist <- data.frame(x = "B" , y = "A", z = 84.0)
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+At 84% similarity, **B** is **not** merged with **A**!
+
+We've find a threshold (`minimum_match`) and its default value
+(`84`). Co-occurring OTUs will be merged if they have a similarity
+greater than `minimum_match`.
+
+What do you think of this default value of 84%? Is it too relax? or
+still too stringent? How does it translate in terms of phylogenetic
+distance? Would you have set the same default value?
+
+
+### decimal values?
+
+To confirm that decimal values are taken into account, we could try to
+a value just above the default threshold:
+
+```{r}
+matchlist <- data.frame(x = "B" , y = "A", z = 84.1)
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+At 84.1% similarity, **B** is merged with **A**. Decimal values are
+taken into account.
+
+
+### new threshold?
+
+Let's try to set up a new similarity threshold value:
+
+```{r}
+matchlist <- data.frame(x = "B" , y = "A", z = 95.0)
+```
+
+```{r}
+lulu::lulu(otutable, matchlist, minimum_match = 99)$curated_table
+```
+
+Similarity values lesser than `minimum_match` are discarded. **A** and
+**B** are considered as having no valid match, and are not merged.
+
+```{r}
+lulu::lulu(otutable, matchlist, minimum_match = 95.0)$curated_table
+```
+
+Similarity values equal to `minimum_match` are discarded. **A** and
+**B** are considered as having no valid match, and are not merged.
+
+```{r}
+lulu::lulu(otutable, matchlist, minimum_match = 94.9)$curated_table
+```
+
+Similarity values greater than `minimum_match` are accepted. **A** and
+**B** are merged.
+
+Try with a value directly below.
+
+Note that there is a mistake in the `Examples` section in `?lulu`: in
+the last example, `minimum_match` ranges from 0 to 1.00, whereas it
+ranges from 0 to 100 in the `Usage` section. The option description
+does not indicate which representation is correct, but our tests show
+us that values between 0 and 100.00 are accepted.
+
+
+### no match?
+
+What happens if a third OTU **C** is present?
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B", "C"),
+    s1 = c(9, 1, 1),
+    s2 = c(9, 1, 1))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+**A**, **B**, and **C** co-occur; both **B** and **C** are less
+abundant than **A**. If there is no match between **C** and the two
+others:
+
+```{r}
+matchlist <- data.frame(x = "B" , y = "A", z = 99.0)
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+As expected, **C** is not merged.
+
+If there is a match between **C** and **A**:
+
+```{r}
+matchlist <- data.frame(x = c("B", "C") , y = c("A", "A"), z = c(99.0, 98.0))
+```
+
+```{r echo=FALSE}
+matchlist
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+As expected, **C** is merged.
+
+
+## abundance ratio
+
+Let's go back to our simple example:
+
+```{r}
+matchlist <- data.frame(x = "B" , y = "A", z = 99.0)
+```
+
+```{r echo=FALSE}
+matchlist
+```
+
+### ratio threshold?
+
+this time, we are going to change the abundance ratio:
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(2, 1),
+    s2 = c(2, 1))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+With a ratio of 2, **B** is merged with **A**.
+
+Let's try with an equal ratio:
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(1, 1),
+    s2 = c(1, 1))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+With a ratio of 1, **B** is **not** merged with **A**.
+
+The threshold seems to be between a ratio of 1 and 2. Let's try with
+a ratio close to 1:
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(11, 10),
+    s2 = c(11, 10))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+With a ratio of 1.1, **B** is merged with **A**.
+
+It seems likely that the ratio threshold is 1.0, and that cases with a
+ratio greater than 1.0 are accepted. Let's try with a ratio very close
+to 1 to confirm that:
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(10001, 10000),
+    s2 = c(10001, 10000))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+With a ratio of 1.0001, **B** is merged with **A**. We've confirmed
+that the ratio value must be greater than 1.0 to allow merging.
+
+
+### global or local?
+
+Now, we could try to set up a new ratio threshold, but we first need
+to check what happens when local ratio values are very
+different.
+
+Let's try with a greater abundance of **A** in sample 1, but an equal
+ratio in sample 2:
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(9, 1),
+    s2 = c(1, 1))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+With a **local** ratio of 1, **B** is **not** merged with **A**.
+
+Let's try with a greater abundance of **A** in all samples, except
+one:
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(9, 1),
+    s2 = c(9, 1),
+    s3 = c(9, 1),
+    s4 = c(9, 1),
+    s5 = c(1, 1))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+When a single **local** ratio is below the threshold, **B** is **not**
+merged with **A**.
+
+Merging depends on the minimal (lowest) ratio value observed across
+all samples where both **A** and **B** are present (co-occur).
+
+
+### minimum ratio
+
+This is confirmed by the documentation. Merging is controlled by an
+option `minimum_ratio` with a default value of 1.0. The documentation
+does not state that only values strictly greater than 1.0 are valid,
+but we've established that with our tests.
+
+Let's try a higher `minimum_ratio` value:
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(9, 1),
+    s2 = c(9, 1))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+```{r}
+lulu::lulu(otutable, matchlist, minimum_ratio = 9)$curated_table
+```
+
+No merging, as expected.
+
+Is it possible to set a minimum ratio threshold below 1.0?
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(9, 1),
+    s2 = c(1, 2))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+```{r}
+lulu::lulu(otutable, matchlist, minimum_ratio = 0.6)$curated_table
+```
+
+With a minimal observed ratio of 0.5, and a threshold set at 0.6,
+merging was expected but it seems that lulu silently ignores
+`minimum_ratio` values smaller than 1.0.
+
+We've seen that, by default, merging depends on the minimal (lowest)
+ratio value observed across all samples where both **A** and **B** are
+present (co-occur). According to the documentation, it is possible to
+change the ratio type.
+
+
+### minimum ratio type
+
+With the `minimum_ratio_type` option, `lulu` will use the average
+abundance ratio, rather than the minimal ratio. Let's make an example
+to illustrate the use of `minimum_ratio_type = avg`:
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(10001, 10000),
+    s2 = c(10000, 10000))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+```{r}
+lulu::lulu(otutable, matchlist, minimum_ratio_type = "avg")$curated_table
+```
+
+The average ratio is ((10001 + 10000) / 10000) / 2) = 20001 / 20000 =
+1.00005, which is right above the default threshold of 1.0. What do
+you think of that merging? Looking at the abundance distributions,
+would you merge **A** and **B**? maybe **A** and **B** are alleles in
+a diploid organism?
+
+According to the documentation (`?lulu`), using `minimum_ratio_type =
+avg` is not recommended:
+
+> Choosing lower abundance on average over globally lower abundance
+> will greatly increase the number of designated errors. This option
+> was introduced to make it possible to account for non-sufficiently
+> clustered intraspecific variation, but is not generally recommended,
+> as it will also increase the potential of cluster well-separated,
+> but co-occuring, sequence similar species.
+
+Now that we've seen how abundance ratios are computed and used to
+decide whether or not to merge OTUs, we can tackle our final major
+question: what happens if either **A** or **B** are not present in all
+samples? In other words, what happens when there is only partial
+co-occurrence?
+
+
+## co-occurrence
+
+So far, we've seen cases where **A** and **B** were present in all
+samples. In real datasets, one can guess that it will not always be
+the case. 
+
+cases without a total co-occurrence (partial overlap)
+
+- A everywhere, B missing in some
+- A everywhere, B missing in some (same spread, greater total)
+- A everywhere, B missing in some (same spread, same total)
+
+
+(abundance value is zero in certain samples). That leads us to
+the last unexplored cases: co-occurrence and partial co-occurrence!
+
+### spread and total
+
+Have a look at $otu_map.
+
+Play with the spread and total limit.
+
+
+Let's try with a greater total abundance for **A**, but an
+equal ratio in sample 2:
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(2, 1),
+    s2 = c(1, 1))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+With a **local** ratio of 1, **B** is **not** merged with **A**.
+
+
+### minimum relative cooccurence
+
+Demonstrate the issue (no effect when using default parameters, but
+works when using avg).
+
+```{r}
+matchlist <- data.frame(x = "B" , y = "A", z = 99.0)
+otutable <- data.frame(
     row.names = c("A", "B"),
     s01 = c(0, 1), # <= 'B' present, 'A' absent
     s02 = c(9, 1),
@@ -124,8 +683,10 @@ otutable_name <- data.frame(
     s20 = c(9, 1),
     s21 = c(9, 1),
     s22 = c(9, 0)) # <= 'A' present, 'B' absent
+```
 
-otutable_name
+```{r echo=FALSE}
+otutable
 ```
 
 Note that parent 'A' is absent in one sample where 'B is present', and
@@ -137,8 +698,43 @@ relative co-occurence is 20 / 21 = 0.95238, which is greater than
 ```{r}
 ## bug: no merging with default parameters
 ## (minimum_ratio = 0)
-lulu::lulu(otutable_name, matchlist_name)
+lulu::lulu(otutable, matchlist)$curated_table
 ```
+
+
+## lulu issues
+
+- some thresholds are not explicit (greater than, or equal or greater than?)
+- minimum match threshold is not clearly stated (0 to 1, or 0 to 100) (mixed up examples),
+- does not work with only one sample,
+- does not work with empty matchlists (should output the same table),
+- does not work with empty OTUs (no reads, it should skip the OTU),
+- no versionning,
+- uses deprecated dplyr features,
+- no maintenance (not used by original developers, code decay),
+- slow
+
+
+## mumu
+
+As demonstrated above, in its current version `lulu` has a bug (a
+difference between the documentation and intention, and the way the
+programm actually works). During its developement, `mumu` was a `lulu`
+clone, then it started to diverge, first to address the discovered
+bug, then to address what I think to be useless requirements.
+
+- `lulu` requires potential parents to have greater or equal spread
+  and greater or equal abundance,
+- `mumu` only requires greater or equal abundance (spread can be
+  lower),
+
+The difference is minor, but results in a small percentage of
+additional mergings with `mumu`.
+
+To make it easier to integrate `mumu` into automatic pipelines, `mumu`
+also allows for empty OTUs (null abundance vales), empty match lists,
+etc. (programming rule: no surprises), further departing from `lulu`
+when dealing with corner-cases.
 
 
 ***
