@@ -137,7 +137,7 @@ This is the curated (cleaned) version of our dataset. As expected,
 `lulu` grouped the low-abundant **B** with **A** by *merging* the
 occurrence values of **B** with **A**'s. Then **B** was discarded.
 
-Good, before going any further, let's have a look at the warning
+Good, before going any further, let's first have a look at the warning
 message.
 
 
@@ -511,7 +511,7 @@ Merging depends on the minimal (lowest) ratio value observed across
 all samples where both **A** and **B** are present (co-occur).
 
 
-### minimum ratio
+### minimum ratio?
 
 This is confirmed by the documentation. Merging is controlled by an
 option `minimum_ratio` with a default value of 1.0. The documentation
@@ -564,7 +564,7 @@ present (co-occur). According to the documentation, it is possible to
 change the ratio type.
 
 
-### minimum ratio type
+### minimum ratio type?
 
 With the `minimum_ratio_type` option, `lulu` will use the average
 abundance ratio, rather than the minimal ratio. Let's make an example
@@ -612,33 +612,32 @@ co-occurrence?
 
 So far, we've seen cases where **A** and **B** were present in all
 samples. In real datasets, one can guess that it will not always be
-the case. 
+the case. If we were to summarize all possible cases for two OTUs
+**A** and **B**, either present **O** or absent **X** in the same
+samples, we would list four different cases:
 
-cases without a total co-occurrence (partial overlap)
+|   | 1 | 2 | 3 | 4 |
+|---|:-:|:-:|:-:|:-:|
+| A | O | X | O | X |
+| B | O | X | X | O |
 
-- A everywhere, B missing in some
-- A everywhere, B missing in some (same spread, greater total)
-- A everywhere, B missing in some (same spread, same total)
+Case 1 (complete overlap, or presence in the same samples) is the
+simplest case, we've already tested that.
 
-
-(abundance value is zero in certain samples). That leads us to
-the last unexplored cases: co-occurrence and partial co-occurrence!
-
-### spread and total
-
-Have a look at $otu_map.
-
-Play with the spread and total limit.
+A fifth case is possible! Where both **A** and **B** are present, but
+in different samples. This fifth case is the most complicated, we'll
+explore it last.
 
 
-Let's try with a greater total abundance for **A**, but an
-equal ratio in sample 2:
+### case 2: co-absence
+
+In case 2, both **A** and **B** are missing in the same samples:
 
 ```{r}
 otutable <- data.frame(
     row.names = c("A", "B"),
-    s1 = c(2, 1),
-    s2 = c(1, 1))
+    s1 = c(9, 1),
+    s2 = c(0, 0))
 ```
 
 ```{r echo=FALSE}
@@ -649,16 +648,132 @@ otutable
 lulu::lulu(otutable, matchlist)$curated_table
 ```
 
-With a **local** ratio of 1, **B** is **not** merged with **A**.
+As expected, **A** and **B** are merged.
 
 
-### minimum relative cooccurence
+### case 3: B is missing
 
-Demonstrate the issue (no effect when using default parameters, but
-works when using avg).
+In case 3, **B** is missing in samples where **A** is present:
 
 ```{r}
-matchlist <- data.frame(x = "B" , y = "A", z = 99.0)
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(9, 1),
+    s2 = c(1, 0))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+As expected, **A** and **B** are merged.
+
+
+### case 4: A is missing
+
+In case 4, **A** is missing in samples where **B** is present:
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(9, 1),
+    s2 = c(0, 1))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+```{r}
+lulu::lulu(otutable, matchlist)$curated_table
+```
+
+As expected, **A** and **B** are **not** merged.
+
+You might think that the merge is rejected because the abundance ratio
+for sample 2 is 0, which is below the default `minimum_ratio` of
+1.0. In reality, **A** is discarded as a potential parent because its
+**spread** is below **B**'s spread. Let's have a look at the `otu_map`
+output:
+
+```{r}
+lulu::lulu(otutable, matchlist)$otu_map
+```
+
+There are two interesting columns here: **spread**, the number of
+samples where an OTU is present; and **total**, the total number of
+reads in the OTU.
+
+To be considered as a potential parent of **B**, OTU **A** needs to
+have a greater or equal spread. We've proved that with our tests
+above. Note: having a greater total (total number of reads) is not
+required by `lulu`.
+
+So far, we've only seen cases were both spread and total were
+systematically equal or higher for **A**. To test the last remaining
+case, where both A and B exist independently, we will need to take the
+spread into account.
+
+### case 5: partial overlap
+
+In case 5, **A** is missing in samples where **B** is present, and
+vice-versa. This is by far the most complex case.
+
+To decide wether or not **A** is a potential parent of **B**, lulu
+computes their relative co-occurence. For example:
+
+```{r}
+otutable <- data.frame(
+    row.names = c("A", "B"),
+    s1 = c(9, 0),
+    s2 = c(9, 1),
+    s3 = c(9, 1),
+    s4 = c(0, 1))
+```
+
+```{r echo=FALSE}
+otutable
+```
+
+Here, **A** and **B** are present in three samples (spread of 3), and
+co-occur in two samples (relative co-occurence of 2/3).
+
+The relative co-occurence must be greater or equal to a threshold
+value for **A** to be considered as a potential parent of **B**. That
+threshold value is set to 0.95 by default, allowing the potential
+parent to be missing in a few sample (imperfect overlap). The
+threshold value can be modified with the
+`minimum_relative_cooccurence` option:
+
+> minimum co-occurrence rate – i.e. the lower rate of occurrence of
+> the potential error explained by co-occurrence with the potential
+> parent for considering error state.
+
+In the example above, **A** and **B** are both present in two samples,
+and **B** is present in three samples, so the relative co-occurence
+ratio is 0.66. Spread values are equal (3 samples), so if we set the
+minimal co-occurrence ratio to 0.6, we expect a merge:
+
+```{r}
+lulu::lulu(otutable, matchlist, minimum_relative_cooccurence = 0.6)$curated_table
+```
+
+Fail!?
+
+Maybe there is an issue with the `minimum_relative_cooccurence`
+option? Can we make a partial overlap test that should work with
+default parameters?
+
+A relative co-occurence of 0.95 means that we need at least 20
+samples, with **A** present with **B** in 19 samples, and one sample
+with only **B**, plus one sample with only **A** to maintain spread
+equality.
+
+```{r}
 otutable <- data.frame(
     row.names = c("A", "B"),
     s01 = c(0, 1), # <= 'B' present, 'A' absent
@@ -689,11 +804,10 @@ otutable <- data.frame(
 otutable
 ```
 
-Note that parent 'A' is absent in one sample where 'B is present', and
-present in one sample where 'B' is absent (same total spread). The
-relative co-occurence is 20 / 21 = 0.95238, which is greater than
-0.95, the default threshold value.
-
+Note that parent **A** is absent in one sample where **B** is present,
+and present in one sample where **B** is absent (same total
+spread). The relative co-occurence is 20 / 21 > 0.95238, which is
+greater than 0.95, the default threshold value.
 
 ```{r}
 ## bug: no merging with default parameters
@@ -701,27 +815,46 @@ relative co-occurence is 20 / 21 = 0.95238, which is greater than
 lulu::lulu(otutable, matchlist)$curated_table
 ```
 
+Fail!?
 
-## lulu issues
+Check the log file:
 
-- some thresholds are not explicit (greater than, or equal or greater than?)
-- minimum match threshold is not clearly stated (0 to 1, or 0 to 100) (mixed up examples),
-- does not work with only one sample,
-- does not work with empty matchlists (should output the same table),
-- does not work with empty OTUs (no reads, it should skip the OTU),
-- no versionning,
-- uses deprecated dplyr features,
-- no maintenance (not used by original developers, code decay),
-- slow
+```
+####processing: A #####
+---hits: 
+---potential parent: 
+No parent found!
+
+####processing: B #####
+---hits: A
+---potential parent: A
+------checking: A
+------relative cooccurence: 0.952380952380952 which is sufficient!
+------min avg abundance: 0
+No parent found!
+```
+
+Relative co-occurence is accepted, but the minimal observed abundance
+ratio is null where **A** is absent (0 / 1 = 0), which leads to
+rejection. So according to its documentation, `lulu` allows for
+partial overlaps by default, but in reality they never pass the
+abundance ratio filter.
+
+A way to fix that would be to compute the minimal observed abundance
+ratio using only samples where both **A** and **B** are present. This
+is what I have done with
+[mumu](https://github.com/frederic-mahe/mumu), my C++ implementation
+of the `lulu` algorithm.
 
 
 ## mumu
 
 As demonstrated above, in its current version `lulu` has a bug (a
-difference between the documentation and intention, and the way the
-programm actually works). During its developement, `mumu` was a `lulu`
+difference between documentation and the way the programm actually
+works). At the beginning of its developement, `mumu` was a `lulu`
 clone, then it started to diverge, first to address the discovered
-bug, then to address what I think to be useless requirements.
+bug, then to address what I think to be useless requirements. For
+example:
 
 - `lulu` requires potential parents to have greater or equal spread
   and greater or equal abundance,
@@ -733,9 +866,37 @@ additional mergings with `mumu`.
 
 To make it easier to integrate `mumu` into automatic pipelines, `mumu`
 also allows for empty OTUs (null abundance vales), empty match lists,
-etc. (programming rule: no surprises), further departing from `lulu`
-when dealing with corner-cases.
+single sample tables, etc., further departing from `lulu` when dealing
+with corner-cases.
 
+(programming rule: no surprises)
+
+
+## lulu refactoring
+
+The `lulu` code has not been updated since November 2017 (code
+decay). If someone were to refactor `lulu` (for R), I would suggest
+the following course of action:
+
+- add: version and release numbers,
+- add: automatic tests,
+- document: threshold limits (greater than, or equal or greater than?),
+- document: minimum match threshold representation is not clearly stated (0 to 1, or 0 to 100) (mixed up examples),
+- fix: update deprecated dplyr command,
+- fix: accept single-sample tables,
+- fix: accept empty matchlists (should output the same table),
+- fix: accept empty OTUs (no reads, it should skip the OTU),
+- fix: remove the `dplyr` dependency?
+- fix: make `lulu` faster (e.g.; other dependency, Rcpp)
+
+
+***
+
+That concludes this test-based exploration of the `lulu` algorithm. I
+hope you now have a better understanding of what `lulu` does, and of
+its limitations. I would like to point out that programming bugs are a
+**very** common thing, and that the presence of a bug in `lulu` should
+not reflect badly on the work of Frøslev and colleagues.
 
 ***
 
