@@ -30,7 +30,7 @@ from [lulu's GitHub repository](https://github.com/tobiasgf/lulu):
 
 > The purpose of lulu is to reduce the number of erroneous OTUs in OTU
 > tables to achieve more realistic biodiversity metrics. By evaluating
-> the co-occurence patterns of OTUs among samples lulu identifies OTUs
+> the co-occurrence patterns of OTUs among samples lulu identifies OTUs
 > that consistently satisfy some user selected criteria for being
 > errors of more abundant OTUs and merges these.
 
@@ -41,8 +41,8 @@ will do so just by using hand-crafted tests.
 
 Authors and programmers are well-intended, but programming is
 hard. So, if you are ever in doubt about a certain feature, or a
-specifity of your data, writing a short test can save you a lot of
-time and frustation.
+specificity of your data, writing a short test can save you a lot of
+time and frustration.
 
 Let's dive in!
 
@@ -599,7 +599,7 @@ avg` is not recommended:
 > was introduced to make it possible to account for non-sufficiently
 > clustered intraspecific variation, but is not generally recommended,
 > as it will also increase the potential of cluster well-separated,
-> but co-occuring, sequence similar species.
+> but co-occurring, sequence similar species.
 
 Now that we've seen how abundance ratios are computed and used to
 decide whether or not to merge OTUs, we can tackle our final major
@@ -723,8 +723,8 @@ spread into account.
 In case 5, **A** is missing in samples where **B** is present, and
 vice-versa. This is by far the most complex case.
 
-To decide wether or not **A** is a potential parent of **B**, lulu
-computes their relative co-occurence. For example:
+To decide whether or not **A** is a potential parent of **B**, lulu
+computes their relative co-occurrence. For example:
 
 ```{r}
 otutable <- data.frame(
@@ -740,9 +740,9 @@ otutable
 ```
 
 Here, **A** and **B** are present in three samples (spread of 3), and
-co-occur in two samples (relative co-occurence of 2/3).
+co-occur in two samples (relative co-occurrence of 2/3).
 
-The relative co-occurence must be greater or equal to a threshold
+The relative co-occurrence must be greater or equal to a threshold
 value for **A** to be considered as a potential parent of **B**. That
 threshold value is set to 0.95 by default, allowing the potential
 parent to be missing in a few sample (imperfect overlap). The
@@ -754,7 +754,7 @@ threshold value can be modified with the
 > parent for considering error state.
 
 In the example above, **A** and **B** are both present in two samples,
-and **B** is present in three samples, so the relative co-occurence
+and **B** is present in three samples, so the relative co-occurrence
 ratio is 0.66. Spread values are equal (3 samples), so if we set the
 minimal co-occurrence ratio to 0.6, we expect a merge:
 
@@ -768,7 +768,7 @@ Maybe there is an issue with the `minimum_relative_cooccurence`
 option? Can we make a partial overlap test that should work with
 default parameters?
 
-A relative co-occurence of 0.95 means that we need at least 20
+A relative co-occurrence of 0.95 means that we need at least 20
 samples, with **A** present with **B** in 19 samples, and one sample
 with only **B**, plus one sample with only **A** to maintain spread
 equality.
@@ -806,7 +806,7 @@ otutable
 
 Note that parent **A** is absent in one sample where **B** is present,
 and present in one sample where **B** is absent (same total
-spread). The relative co-occurence is 20 / 21 > 0.95238, which is
+spread). The relative co-occurrence is 20 / 21 > 0.95238, which is
 greater than 0.95, the default threshold value.
 
 ```{r}
@@ -834,11 +834,11 @@ No parent found!
 No parent found!
 ```
 
-Relative co-occurence is accepted, but the minimal observed abundance
+Relative co-occurrence is accepted, but the minimal observed abundance
 ratio is null where **A** is absent (0 / 1 = 0), which leads to
 rejection. So according to its documentation, `lulu` allows for
-partial overlaps by default, but in reality they never pass the
-abundance ratio filter.
+partial overlaps by default (relative co-occurrence ratio = 0.95), but
+in reality potential parents never pass the abundance ratio filter.
 
 A way to fix that would be to compute the minimal observed abundance
 ratio using only samples where both **A** and **B** are present. This
@@ -850,8 +850,8 @@ of the `lulu` algorithm.
 ## mumu
 
 As demonstrated above, in its current version `lulu` has a bug (a
-difference between documentation and the way the programm actually
-works). At the beginning of its developement, `mumu` was a `lulu`
+difference between documentation and the way the program actually
+works). At the beginning of its development, `mumu` was a `lulu`
 clone, then it started to diverge, first to address the discovered
 bug, then to address what I think to be useless requirements. For
 example:
@@ -862,7 +862,7 @@ example:
   lower),
 
 The difference is minor, but results in a small percentage of
-additional mergings with `mumu`.
+additional merging with `mumu`.
 
 To make it easier to integrate `mumu` into automatic pipelines, `mumu`
 also allows for empty OTUs (null abundance vales), empty match lists,
