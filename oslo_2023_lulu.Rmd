@@ -146,7 +146,7 @@ message.
 We got a warning indicating that `lulu` uses `funs()`, a deprecated
 `dplyr` feature. That feature has been marked as deprecated in
 Feb. 2019 and will be removed from `dplyr` in future versions, at
-which point `lulu` will cease to work.
+which point `lulu` will cease to work (code decay).
 
 The issue is in file
 [Functions.R](https://github.com/tobiasgf/lulu/blob/master/R/Functions.R),
@@ -157,6 +157,10 @@ curation_table <- as.data.frame(curation_table %>%
                                 group_by(nOTUid) %>%
                                 summarise_all(funs(sum)))
 ```
+
+[Functions.R](https://github.com/tobiasgf/lulu/blob/master/R/Functions.R),
+which contains all the executable code for `lulu`, was updated for the
+last time in November 2017.
 
 A quick fix (replace `funs()` with `list()`):
 
