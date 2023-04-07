@@ -879,15 +879,19 @@ decay). If someone were to refactor `lulu` (for R), I would suggest
 the following course of action:
 
 - add: version and release numbers,
-- add: automatic tests,
-- document: threshold limits (greater than, or equal or greater than?),
-- document: minimum match threshold representation is not clearly stated (0 to 1, or 0 to 100) (mixed up examples),
+- add: automatic tests (see [testthat](https://testthat.r-lib.org/)),
+- document: threshold limits (greater than, or equal or greater
+  than?),
+- document: minimum match threshold representation is not clearly
+  stated (0 to 1, or 0 to 100) (mixed up examples),
 - fix: update deprecated dplyr command,
 - fix: accept single-sample tables,
 - fix: accept empty matchlists (should output the same table),
 - fix: accept empty OTUs (no reads, it should skip the OTU),
 - fix: remove the `dplyr` dependency?
-- fix: make `lulu` faster (e.g.; other dependency, Rcpp)
+- fix: make `lulu` faster (e.g.;
+  [data.table](https://cran.r-project.org/web/packages/data.table/),
+  [Rcpp](https://cran.r-project.org/web/packages/Rcpp/))
 
 
 ***
