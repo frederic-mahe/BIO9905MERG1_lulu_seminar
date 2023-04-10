@@ -36,7 +36,7 @@ from [lulu's GitHub repository](https://github.com/tobiasgf/lulu):
 
 I invite everyone to read the companion paper [Frøslev et
 al. (2017)](https://www.nature.com/articles/s41467-017-01312-x), but
-today, we will try to understand what lulu can and cannot do, and we
+today, we will try to understand what `lulu` can and cannot do, and we
 will do so just by using hand-crafted tests.
 
 Authors and programmers are well-intended, but programming is
@@ -878,12 +878,14 @@ with corner-cases.
 
 ## lulu refactoring
 
-The `lulu` code has not been updated since November 2017 (code
-decay). If someone were to refactor `lulu` (for R), I would suggest
+The `lulu` code has not been updated since November 2017 (*code
+decay*). If someone were to refactor `lulu` (for R), I would suggest
 the following course of action:
 
 - add: version and release numbers,
 - add: automatic tests (see [testthat](https://testthat.r-lib.org/)),
+  tests lead to modular code, and give you the confidence to share
+  your code and to refactor,
 - document: threshold limits (greater than, or equal or greater
   than?),
 - document: minimum match threshold representation is not clearly
