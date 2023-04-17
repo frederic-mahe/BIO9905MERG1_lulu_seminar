@@ -1,7 +1,7 @@
 ---
 title: "post-clustering curation with lulu"
 author: "Frédéric Mahé"
-date: '2023-04-06'
+date: '2023-04-19'
 
 output:
   rmarkdown::html_document:
@@ -146,9 +146,10 @@ message.
 We got a warning indicating that `lulu` uses `funs()`, a deprecated
 `dplyr` feature. That feature has been marked as deprecated in
 Feb. 2019 and will be removed from `dplyr` in future versions, at
-which point `lulu` will cease to work (code decay).
+which point `lulu` will cease to work (that's an example of *code
+decay*: aging code becomes inadapted to its environment).
 
-The issue is in file
+The issue is in `lulu`'s file
 [Functions.R](https://github.com/tobiasgf/lulu/blob/master/R/Functions.R),
 line 170:
 
@@ -202,11 +203,11 @@ cbind(nOTUid = c("A", "A"), otutable) %>%
 curation_table
 ```
 
-Less parenthesis symbols, one action per line, data flows from left to
-right, only one named-object at the end (naming objects and variables
-is hard). If you rarely use `dplyr`, then adding `dplyr::` in front of
-commands is a good habit, as it makes it easier to track package
-usage.
+Less parenthesis symbols, less indentation, one action per line, data
+flows from left to right, only one named-object at the end (naming
+objects and variables is hard). If you rarely use `dplyr`, then adding
+`dplyr::` in front of commands is a good habit, as it makes it easier
+to track package usage.
 
 Now that we understand the warning message, let's go back to our
 results. Don't worry, the rest we'll be less technical and more
@@ -262,13 +263,13 @@ greater than `minimum_match`.
 
 What do you think of this default value of 84%? Is it too relax? or
 still too stringent? How does it translate in terms of phylogenetic
-distance? Would you have set the same default value?
+distance? Would you set the same default value?
 
 
 ### decimal values?
 
-To confirm that decimal values are taken into account, we could try to
-a value just above the default threshold:
+To confirm that decimal values are taken into account, we could try a
+value that is just above the default threshold:
 
 ```{r}
 matchlist <- data.frame(x = "B" , y = "A", z = 84.1)
@@ -284,11 +285,13 @@ taken into account.
 
 ### new threshold?
 
-Let's try to set up a new similarity threshold value:
+Let's change the similarity between **A** and **B**:
 
 ```{r}
 matchlist <- data.frame(x = "B" , y = "A", z = 95.0)
 ```
+
+What happens if we set a new similarity threshold value?
 
 ```{r}
 lulu::lulu(otutable, matchlist, minimum_match = 99)$curated_table
@@ -311,10 +314,8 @@ lulu::lulu(otutable, matchlist, minimum_match = 94.9)$curated_table
 Similarity values greater than `minimum_match` are accepted. **A** and
 **B** are merged.
 
-Try with a value directly below.
-
 Note that there is a mistake in the `Examples` section in `?lulu`: in
-the last example, `minimum_match` ranges from 0 to 1.00, whereas it
+the last example, `minimum_match` ranges from 0 to 1, whereas it
 ranges from 0 to 100 in the `Usage` section. The option description
 does not indicate which representation is correct, but our tests show
 us that values between 0 and 100.00 are accepted.
@@ -380,7 +381,7 @@ matchlist
 
 ### ratio threshold?
 
-this time, we are going to change the abundance ratio:
+This time, we are going to change the abundance ratio:
 
 ```{r}
 otutable <- data.frame(
@@ -555,10 +556,10 @@ otutable
 ```
 
 ```{r}
-lulu::lulu(otutable, matchlist, minimum_ratio = 0.6)$curated_table
+lulu::lulu(otutable, matchlist, minimum_ratio = 0.3)$curated_table
 ```
 
-With a minimal observed ratio of 0.5, and a threshold set at 0.6,
+With a minimal observed ratio of 0.5, and a threshold set at 0.3,
 merging was expected but it seems that lulu silently ignores
 `minimum_ratio` values smaller than 1.0.
 
@@ -570,9 +571,9 @@ change the ratio type.
 
 ### minimum ratio type?
 
-With the `minimum_ratio_type` option, `lulu` will use the average
-abundance ratio, rather than the minimal ratio. Let's make an example
-to illustrate the use of `minimum_ratio_type = avg`:
+With the `minimum_ratio_type` option, `lulu` will use the *average*
+abundance ratio, rather than the *minimal* ratio. Let's make an
+example to illustrate the use of `minimum_ratio_type = avg`:
 
 ```{r}
 otutable <- data.frame(
@@ -625,12 +626,12 @@ samples, we would list four different cases:
 | A | O | X | O | X |
 | B | O | X | X | O |
 
-Case 1 (complete overlap, or presence in the same samples) is the
-simplest case, we've already tested that.
-
 A fifth case is possible! Where both **A** and **B** are present, but
 in different samples. This fifth case is the most complicated, we'll
 explore it last.
+
+**Case 1** (complete overlap, or presence in the same samples) is the
+simplest case, we've already tested that.
 
 
 ### case 2: co-absence
@@ -860,7 +861,7 @@ clone, then it started to diverge, first to address the discovered
 bug, then to address what I think to be useless requirements. For
 example:
 
-- `lulu` requires potential parents to have greater or equal spread
+- `lulu` requires potential parents to have greater or equal spread,
   and greater or equal abundance,
 - `mumu` only requires greater or equal abundance (spread can be
   lower),
@@ -869,11 +870,11 @@ The difference is minor, but results in a small percentage of
 additional merging with `mumu`.
 
 To make it easier to integrate `mumu` into automatic pipelines, `mumu`
-also allows for empty OTUs (null abundance vales), empty match lists,
-single sample tables, etc., further departing from `lulu` when dealing
+also allows for empty OTUs (null abundance values), empty match lists,
+single-sample tables, etc., further departing from `lulu` when dealing
 with corner-cases.
 
-(programming rule: no surprises)
+(programming rule: no surprises!)
 
 
 ## lulu refactoring
@@ -884,8 +885,6 @@ the following course of action:
 
 - add: version and release numbers,
 - add: automatic tests (see [testthat](https://testthat.r-lib.org/)),
-  tests lead to modular code, and give you the confidence to share
-  your code and to refactor,
 - document: threshold limits (greater than, or equal or greater
   than?),
 - document: minimum match threshold representation is not clearly
@@ -894,19 +893,25 @@ the following course of action:
 - fix: accept single-sample tables,
 - fix: accept empty matchlists (should output the same table),
 - fix: accept empty OTUs (no reads, it should skip the OTU),
+- fix: allow chained-merges (**C** -> **B** -> **A**)?
 - fix: remove the `dplyr` dependency?
 - fix: make `lulu` faster (e.g.;
   [data.table](https://cran.r-project.org/web/packages/data.table/),
   [Rcpp](https://cran.r-project.org/web/packages/Rcpp/))
+
+Tests lead to cleaner and more modular code, and they make you
+confident enough to share your code with colleagues, and to tackle
+refactoring.
 
 
 ***
 
 That concludes this test-based exploration of the `lulu` algorithm. I
 hope you now have a better understanding of what `lulu` does, and of
-its limitations. I would like to point out that programming bugs are a
-**very** common thing, and that the presence of a bug in `lulu` should
-not reflect badly on the work of Frøslev and colleagues.
+its strengths and weaknesses. I would like to point out that
+programming bugs are a **very** common thing, and that the presence of
+a bug in `lulu` should not reflect badly on the work of Frøslev and
+colleagues.
 
 ***
 
