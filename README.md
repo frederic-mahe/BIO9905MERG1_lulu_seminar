@@ -12,4 +12,4 @@ file with [RStudio/Posit](https://posit.co/) or
 - [x] start with a simple test showing what `lulu` does,
 - [x] add more complex tests,
 - [x] demonstrate limits,
-- [ ] link [BIO9905MERG1_V23](https://github.com/krabberod/BIO9905MERG1_V23) to this repository
+- [x] link [BIO9905MERG1_V23](https://github.com/krabberod/BIO9905MERG1_V23) to this repository
