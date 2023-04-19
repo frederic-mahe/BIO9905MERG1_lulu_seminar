@@ -7,6 +7,14 @@ file with [RStudio/Posit](https://posit.co/) or
 [Emacs](https://www.gnu.org/software/emacs/) (using the package
 `poly-R`).
 
+## Load into RStudio
+
+- copy the URL of the repository,
+- in RStudio: `File > New Project > Version Control`,
+- paste the URL,
+- open the `oslo_2023_lulu.Rmd` file
+
+
 ## Roadmap
 
 - [x] start with a simple test showing what `lulu` does,
