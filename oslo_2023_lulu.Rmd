@@ -193,7 +193,8 @@ curation_table
 And finally, the way I would organize things:
 
 ```{r eval=TRUE}
-cbind(nOTUid = c("A", "A"), otutable) %>%
+otutable %>%
+    cbind(nOTUid = c("A", "A"), .) %>%
     dplyr::group_by(nOTUid) %>%
     dplyr::summarise(across(everything(), ~ sum(.x))) %>%
     as.data.frame() -> curation_table
