@@ -10,7 +10,7 @@ file with [RStudio/Posit](https://posit.co/) or
 ## Load into RStudio
 
 - copy the URL of the repository,
-- in RStudio: `File > New Project > Version Control`,
+- in RStudio: `File > New Project > Version Control > Git`,
 - paste the URL,
 - open the `oslo_2023_lulu.Rmd` file
 
