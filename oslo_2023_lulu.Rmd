@@ -561,8 +561,8 @@ lulu::lulu(otutable, matchlist, minimum_ratio = 0.3)$curated_table
 ```
 
 With a minimal observed ratio of 0.5, and a threshold set at 0.3,
-merging was expected but it seems that lulu silently ignores
-`minimum_ratio` values smaller than 1.0.
+there is a merging. This is not documented, but `minimum_ratio` values
+smaller than 1.0 are accepted by `lulu`.
 
 We've seen that, by default, merging depends on the minimal (lowest)
 ratio value observed across all samples where both **A** and **B** are
