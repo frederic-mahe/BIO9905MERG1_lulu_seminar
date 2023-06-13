@@ -3,7 +3,7 @@
 post-clustering curation of metabarcoding data with [lulu](https://github.com/tobiasgf/lulu)
 
 To install `lulu` and to reproduce the results, simply run the `.Rmd`
-file with [RStudio/Posit](https://posit.co/) or
+file with [RStudio/Posit](https://posit.co/), or
 [Emacs](https://www.gnu.org/software/emacs/) (using the package
 `poly-R`).
 
