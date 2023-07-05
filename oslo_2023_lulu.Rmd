@@ -36,8 +36,8 @@ from [lulu's GitHub repository](https://github.com/tobiasgf/lulu):
 
 I invite everyone to read the companion paper [Frøslev et
 al. (2017)](https://www.nature.com/articles/s41467-017-01312-x), but
-today, we will try to understand what `lulu` can and cannot do, and we
-will do so just by using hand-crafted tests.
+today, we will try to understand what `lulu` does and how, and we will
+do so just by using hand-crafted tests.
 
 Authors and programmers are well-intended, but programming is
 hard. So, if you are ever in doubt about a certain feature, or a
@@ -909,10 +909,14 @@ refactoring.
 
 That concludes this test-based exploration of the `lulu` algorithm. I
 hope you now have a better understanding of what `lulu` does, and of
-its strengths and weaknesses. I would like to point out that
-programming bugs are a **very** common thing, and that the presence of
-a bug in `lulu` should not reflect badly on the work of Frøslev and
-colleagues.
+its strengths and weaknesses. For instance, `lulu` was designed to
+work with samples with a certain level of variation among them, in
+terms of OTU compositions and abundances. It should not be used on
+mock-communities or on sets of very similar samples, since there is a
+risk of OTUs systematically co-occuring in such datasets. I would also
+like to point out that programming bugs are a **very** common thing,
+and that the presence of a bug in `lulu` should not reflect badly on
+the work of Frøslev and colleagues.
 
 ***
 
