@@ -922,6 +922,11 @@ the work of Frøslev and colleagues.
 
 ***
 
+The latest version of this document is available at
+https://github.com/frederic-mahe/BIO9905MERG1_lulu_seminar
+
+***
+
 ```{r}
 sessionInfo()
 ```
