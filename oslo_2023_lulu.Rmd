@@ -176,7 +176,7 @@ curation_table <- as.data.frame(curation_table %>%
 curation_table
 ```
 
-A better fix using a lambda (more generic, more flexible):
+A better fix using a lambda function (more generic, more flexible):
 
 ```{r eval=TRUE}
 curation_table <- cbind(nOTUid = c("A", "A"), otutable)
