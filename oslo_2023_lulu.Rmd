@@ -844,7 +844,9 @@ Relative co-occurrence is accepted, but the minimal observed abundance
 ratio is null where **A** is absent (0 / 1 = 0), which leads to
 rejection. So according to its documentation, `lulu` allows for
 partial overlaps by default (relative co-occurrence ratio = 0.95), but
-in reality potential parents never pass the abundance ratio filter.
+in reality potential parents never pass the abundance ratio filter (a
+[bug report](https://github.com/tobiasgf/lulu/issues/8) has been
+filed).
 
 A way to fix that would be to compute the minimal observed abundance
 ratio using only samples where both **A** and **B** are present. This
