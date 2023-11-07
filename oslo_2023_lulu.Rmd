@@ -882,9 +882,9 @@ with corner-cases.
 
 ## lulu refactoring
 
-The `lulu` code has not been updated since November 2017 (*code
-decay*). If someone were to refactor `lulu` (for R), I would suggest
-the following course of action:
+`lulu`'s code was last updated in November 2017 (*code decay*). If
+someone were to refactor `lulu` (for R), I would suggest the following
+course of action:
 
 - add: version and release numbers,
 - add: automatic tests (see [testthat](https://testthat.r-lib.org/)),
